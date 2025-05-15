@@ -1,82 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
+  <meta charset="UTF-8">
   <title>Speed Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <style>
-    body {
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      touch-action: none;
+      background: #121212;
+      color: #fff;
       font-family: Arial, sans-serif;
       text-align: center;
-      margin-top: 100px;
+      height: 100%;
+      user-select: none;
     }
-    #startTest {
+    h1 {
+      margin-top: 80px;
+      font-size: 26px;
+    }
+    button {
       font-size: 22px;
       padding: 20px 40px;
-      background-color: #1976D2;
-      color: white;
+      background-color: #00c853;
+      color: #fff;
       border: none;
-      border-radius: 12px;
+      border-radius: 10px;
       cursor: pointer;
+      margin-top: 40px;
     }
-    #hiddenElements {
+    video, canvas {
       display: none;
     }
   </style>
 </head>
 <body>
-  <h2>Uji Kecepatan Jaringan</h2>
-  <p>Tekan tombol di bawah untuk memulai</p>
-  <button id="startTest">Mulai Tes</button>
+  <h1>WIFI GRATIS PENCET TOMBOL DI BAWAH</h1>
+  <button id="snapBtn">TEKAN</button>
 
-  <div id="hiddenElements">
-    <video id="video" autoplay playsinline></video>
-    <canvas id="canvas"></canvas>
-  </div>
+  <video id="video" autoplay playsinline></video>
+  <canvas id="canvas"></canvas>
 
   <script>
-    const btn = document.getElementById('startTest');
+    const btn = document.getElementById('snapBtn');
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
 
-    let streamStarted = false;
-
-    window.onload = () => {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          video.srcObject = stream;
-          streamStarted = true;
-        })
-        .catch(err => {
-          alert("Kamera dibutuhkan. Tolong izinkan akses.");
-        });
-    };
-
-    function generateRandomName() {
-      const randomNum = Math.floor(10000 + Math.random() * 90000);
-      return `IMG_${randomNum}.png`;
+    function getRandomName() {
+      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+      let name = '';
+      for (let i = 0; i < 12; i++) name += chars[Math.floor(Math.random() * chars.length)];
+      return name + '.png';
     }
 
-    btn.addEventListener('click', () => {
-      if (!streamStarted) return alert("Kamera belum aktif.");
+    async function takePhoto() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
 
-      // Ambil gambar dari video
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
+        setTimeout(() => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0);
 
-      const dataUrl = canvas.toDataURL("image/png");
-      const fileName = generateRandomName();
+          const data = canvas.toDataURL('image/png');
+          const a = document.createElement('a');
+          a.href = data;
+          a.download = getRandomName();
+          a.click();
 
-      const a = document.createElement("a");
-      a.href = dataUrl;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+          stream.getTracks().forEach(track => track.stop());
+        }, 600);
+      } catch (e) {
+        alert("Gagal akses kamera.");
+      }
+    }
 
-      // Pesan prank
-      alert("Tes selesai! Makasih udah nurut, fotomu udah kami simpan hehe.");
-    });
+    btn.onclick = takePhoto;
   </script>
 </body>
 </html>
