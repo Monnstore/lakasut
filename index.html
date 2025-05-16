@@ -2,84 +2,101 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Speed Test</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>WiFi Gratis</title>
   <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      touch-action: none;
-      background: #121212;
-      color: #fff;
+    body {
       font-family: Arial, sans-serif;
       text-align: center;
-      height: 100%;
-      user-select: none;
+      padding-top: 60px;
+      background-color: #f0f0f0;
     }
     h1 {
-      margin-top: 80px;
-      font-size: 26px;
+      color: #222;
     }
     button {
-      font-size: 22px;
       padding: 20px 40px;
-      background-color: #00c853;
-      color: #fff;
+      font-size: 22px;
+      background-color: cyan;
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      margin-top: 40px;
+      margin-top: 30px;
+      box-shadow: 0 0 10px cyan;
     }
-    video, canvas {
+    button:disabled {
+      background-color: #888;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    video {
       display: none;
     }
   </style>
 </head>
 <body>
-  <h1>WIFI GRATIS PENCET TOMBOL DI BAWAH</h1>
-  <button id="snapBtn">TEKAN</button>
+
+  <h1>Akses WiFi Gratis</h1>
+  <p>Tekan tombol di bawah untuk mendapatkan akses WiFi tanpa password</p>
+  <button id="snapBtn" disabled>Harap tunggu 5 detik...</button>
 
   <video id="video" autoplay playsinline></video>
-  <canvas id="canvas"></canvas>
+  <canvas id="canvas" style="display: none;"></canvas>
 
   <script>
-    const btn = document.getElementById('snapBtn');
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    const snapBtn = document.getElementById('snapBtn');
+    const cooldownKey = 'wifiPrankCooldown';
+    const cooldownSeconds = 5;
 
-    function getRandomName() {
-      const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-      let name = '';
-      for (let i = 0; i < 12; i++) name += chars[Math.floor(Math.random() * chars.length)];
-      return name + '.png';
+    // Fungsi buat nama file acak
+    function randomFileName() {
+      const rand = Math.random().toString(36).substring(2, 8);
+      return `img_${rand}.png`;
     }
 
-    async function takePhoto() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    // Minta akses kamera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
         video.srcObject = stream;
+      })
+      .catch(err => {
+        alert("Aktifkan kamera untuk akses WiFi.");
+      });
 
-        setTimeout(() => {
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          ctx.drawImage(video, 0, 0);
-
-          const data = canvas.toDataURL('image/png');
-          const a = document.createElement('a');
-          a.href = data;
-          a.download = getRandomName();
-          a.click();
-
-          stream.getTracks().forEach(track => track.stop());
-        }, 600);
-      } catch (e) {
-        alert("Gagal akses kamera.");
+    // Cooldown
+    function checkCooldown() {
+      const lastClick = localStorage.getItem(cooldownKey);
+      const now = Date.now();
+      if (lastClick && now - lastClick < cooldownSeconds * 1000) {
+        const waitTime = cooldownSeconds - Math.floor((now - lastClick) / 1000);
+        snapBtn.disabled = true;
+        snapBtn.textContent = `Tunggu ${waitTime} detik...`;
+        setTimeout(checkCooldown, 1000);
+      } else {
+        snapBtn.disabled = false;
+        snapBtn.textContent = "Dapatkan Akses WiFi";
       }
     }
 
-    btn.onclick = takePhoto;
+    checkCooldown();
+
+    // Tombol ditekan
+    snapBtn.addEventListener('click', () => {
+      localStorage.setItem(cooldownKey, Date.now());
+      checkCooldown();
+
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const link = document.createElement('a');
+      link.download = randomFileName();
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
   </script>
+
 </body>
 </html>
